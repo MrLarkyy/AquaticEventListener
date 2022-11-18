@@ -1,7 +1,6 @@
 package xyz.larkyy.aquaticeventlistener;
 
 import org.bukkit.event.Event;
-import org.bukkit.event.EventPriority;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -11,14 +10,15 @@ public class EventRegistry {
 
     private final Map<Class<? extends Event>,EventListener> listeners = new HashMap<>();
 
-    public <T extends Event> void register(Class<T> clazz, Consumer<T> consumer) {
-        EventListener aquaticListener = listeners.get(clazz);
+    public <T extends Event> EventAction<T> register(Class<T> clazz, Consumer<T> consumer) {
+        EventListener<T> aquaticListener = listeners.get(clazz);
         if (aquaticListener != null) {
-            addActionToRegistered(aquaticListener,consumer);
+            return addActionToRegistered(aquaticListener,consumer);
         }
         else {
-            aquaticListener = new EventListener<>(clazz,consumer);
+            aquaticListener = new EventListener<T>(clazz);
             aquaticListener.register();
+            return aquaticListener.addAction(consumer);
         }
     }
 
@@ -26,8 +26,8 @@ public class EventRegistry {
         listeners.put(listener.getEventClass(),listener);
     }
 
-    private <T extends Event> void addActionToRegistered(EventListener<T> listener, Consumer<T> consumer) {
-        listener.addAction(consumer);
+    private <T extends Event> EventAction<T> addActionToRegistered(EventListener<T> listener, Consumer<T> consumer) {
+        return listener.addAction(consumer);
     }
 
     public static EventRegistry get() {

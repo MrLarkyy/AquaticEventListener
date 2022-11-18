@@ -3,20 +3,28 @@ package xyz.larkyy.aquaticeventlistener;
 import org.bukkit.event.*;
 import org.bukkit.plugin.EventExecutor;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.function.Consumer;
 
 public class EventListener<T extends Event> implements EventExecutor, Listener {
 
-    private Consumer<T> consumer;
+    private final List<EventAction<T>> actions;
     private final Class<T> eventClass;
 
-    public EventListener(Class<T> eventClass, Consumer<T> consumer){
+    public EventListener(Class<T> eventClass){
+        this.actions = new ArrayList<>();
         this.eventClass = eventClass;
-        this.consumer = consumer;
     }
 
-    public void addAction(Consumer<T> consumer) {
-        this.consumer = this.consumer.andThen(consumer);
+    public EventAction<T> addAction(Consumer<T> consumer) {
+        var action = new EventAction<T>(consumer,this);
+        actions.add(action);
+        return action;
+    }
+
+    public void removeAction(EventAction<T> action) {
+        actions.remove(action);
     }
 
     public void register() {
@@ -33,7 +41,9 @@ public class EventListener<T extends Event> implements EventExecutor, Listener {
     @Override
     public void execute(Listener listener, Event event) throws EventException {
         if (getEventClass().isInstance(event)) {
-            consumer.accept((T) event);
+            actions.forEach(a -> {
+                a.accept((T) event);
+            });
         }
     }
 }
